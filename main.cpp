@@ -230,12 +230,16 @@ int main()
         // vec = trans * vec;
         // std::cout << vec.x << " " << vec.y << " " << vec.z << std::endl;
 
-        // glm::ortho(0.0f, (float)SCR_WIDTH, (float)SCR_HEIGHT, 0.0f, 0.1f, 1000.0f);
 
         // create transformations
         glm::mat4 transform = glm::mat4(1.0f);
+        glm::mat4 ortho = glm::ortho(0.0f, (float)SCR_WIDTH, (float)SCR_HEIGHT, 0.0f, 0.1f, 1.0f);
         transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+        transform = glm::translate(ortho, glm::vec3(0.1f, 0.1f, 0.1f));
         transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+
+
+
 
         // draw our first triangle
         // glUseProgram(shaderProgram);
