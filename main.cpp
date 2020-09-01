@@ -72,6 +72,9 @@ int main()
         return -1;
     }
 
+    // build and compile our shader zprogram
+    // -------------------------------------
+    Shader ourShader("/home/nanohostpc/coding/texture_crop_jetson_nano/transform.vs", "/home/nanohostpc/coding/texture_crop_jetson_nano/trasform.fs");
 
     // build and compile our shader program
     // ------------------------------------
@@ -146,17 +149,17 @@ int main()
     glBindVertexArray(0); 
 
 
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    unsigned int texture1, texture2;
+    glGenTextures(1, &texture1);
+    glBindTexture(GL_TEXTURE_2D, texture1);
     // set the texture wrapping/filtering options (on the currently bound texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // load and generate the texture
-    stbi_set_flip_vertically_on_load(true);
     int width, height, nrChannels;
+    stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load("/home/nanohostpc/coding/texture_crop_jetson_nano/FW7511-TVM.jpg", &width, &height, &nrChannels, 0);
     // unsigned char *data = stbi_load("/home/nanohostpc/Pictures/xwindowsystem.png", &width, &height, &nrChannels, 0);
     if (data)
@@ -170,6 +173,33 @@ int main()
     }
 
     stbi_image_free(data);
+
+    // texture 2
+    // ----------
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    data = stbi_load("/home/nanohostpc/Pictures/xwindowsystem.png", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+
+    stbi_image_free(data);
+
+    ourShader.use();
+    ourShader.setInt("texture1", 0);
+    ourShader.setInt("texture2", 1);
 
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -185,46 +215,34 @@ int main()
         // render
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        
-        float aspect_ratio = (float)SCR_WIDTH / (float)SCR_HEIGHT;
-
-        // glViewport(0,0, width/2, height/2);
-        // glViewport(width/2,0, width/2, height/2);
-        
-        // if (SCR_WIDTH > SCR_HEIGHT)
-        // {
-        //     glViewport((SCR_WIDTH-SCR_HEIGHT)/2, 0, SCR_HEIGHT, SCR_HEIGHT);
-        // }
-        // else
-        // {
-        //     glViewport(0, (SCR_HEIGHT-SCR_WIDTH)/2, SCR_HEIGHT, SCR_HEIGHT);
-        // }
-        // glViewport(0,0,SCR_WIDTH, SCR_HEIGHT);
-        
-        // glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-
-        // if (SCR_HEIGHT == 0) exit(1);
-
-        // glScissor(300, 300, 200, 200);
-        // glEnable(GL_SCISSOR_TEST);
-        // glOrthofOES(-50.0, 50.0, -50.0, 50.0, 1.0f, -1.0f);
-
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // bind Texture
-        glBindTexture(GL_TEXTURE_2D, texture);
+        // bind Texture on corresponding texture units
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
 
         // glm
-        glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-        glm::mat4 trans = glm::mat4(1.0f);
-        trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
-        vec = trans * vec;
-        std::cout << vec.x << " " << vec.y << " " << vec.z << std::endl;
+        // glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+        // glm::mat4 trans = glm::mat4(1.0f);
+        // trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
+        // vec = trans * vec;
+        // std::cout << vec.x << " " << vec.y << " " << vec.z << std::endl;
 
-        glm::ortho(0.0f, (float)SCR_WIDTH, (float)SCR_HEIGHT, 0.0f, 0.1f, 1000.0f);
+        // glm::ortho(0.0f, (float)SCR_WIDTH, (float)SCR_HEIGHT, 0.0f, 0.1f, 1000.0f);
+
+        // create transformations
+        glm::mat4 transform = glm::mat4(1.0f);
+        transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+        transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
 
         // draw our first triangle
-        glUseProgram(shaderProgram);
+        // glUseProgram(shaderProgram);
+        ourShader.use();
+        unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawArrays(GL_TRIANGLES, 0, 3);
         
